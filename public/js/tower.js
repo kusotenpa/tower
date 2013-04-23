@@ -123,21 +123,29 @@
 		enemy = new Bitmap(enemyImg);
 		enemy.x = mapSize*1;
 		enemy.y = mapSize*0;
+		// enemy.cache(0, 0, 40, 40);　キャッシュ？
 		stage.addChild(enemy);
 		stage.update();
 		Ticker.setFPS(30);
 		Ticker.addListener(stage);
 		moveEnemy();
+		enemy.onClick = function(e) {
+			alert("star object is clicked.");
+		};
+
 	}
+
+
 
 	//敵移動アニメーション		
 	function moveEnemy(){
 		enemy.id = "enemy";
 		var move = Tween.get(enemy,{loop:false});
 		for(var i =0,len = rootPoint.length; i < len; i++){
-			move.to({x:rootPoint[i].x*mapSize,y:rootPoint[i].y*mapSize},1000,Ease.quartIn);
+			move.to({x:rootPoint[i].x*mapSize,y:rootPoint[i].y*mapSize},100,Ease.quartIn);
 		}
 		move.call(drawEnemy);
+
 
 	}
 
