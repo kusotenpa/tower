@@ -9,12 +9,19 @@
 	<meta name="apple-mobile-web-app-capable" content="yes" > <!--フルスクリーン-->
 	<meta name="apple-mobile-web-app-status-bar-style" content="black" /> <!-- ステータスバーのカラー変更 -->
 	<link rel="stylesheet" href="../public/css/main.css">
-	<script src="../public/js/easel.js"></script>
-	<script src="../public/js/tower.js"></script>
+	
 </head>
-<body onload="init()">
-	<canvas id="canvas"></canvas>
-	
-	
+<body>
+	<div id="wrap">
+		<canvas id="canvas"></canvas>	
+	</div>
+	<div id="friends"></div>
+
+	<script>
+		var createjs = window;
+	</script>
+	<script src="../public/js/easel.js"></script>	
+	<script src="../public/js/tween.js"></script>
+	<script src="../public/js/tower.js"></script>
 </body>
 </html>
