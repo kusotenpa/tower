@@ -1,7 +1,6 @@
 (function(){
 	var d = document;
 
-
 	//canvas設定、satageのインスタンス生成
 	var canvas = d.getElementById("canvas");
 	canvas.width = d.getElementById("wrap").offsetWidth;
@@ -12,6 +11,7 @@
 	//1マスのサイズ
 	var mapSize = 40;
 
+	
 
 
 	// //読み込む画像
@@ -19,7 +19,6 @@
 	// 	{src: "../public/img/tower.png"},
 	// 	{src: "../public/img/tower.png"}
 	// ];
-
 
 
 
@@ -64,11 +63,10 @@
 
 	//マップの描画
 	function createMap(){
-
 		//マスの描画
 		for(var i = 0, w = canvas.width/mapSize; i < w; i++){
 			for(var j = 0, h = canvas.height/mapSize; j < h; j++){
-
+				var eventFlag = false;
 				var s = new Shape();
 				var g = s.graphics;
 
@@ -85,36 +83,33 @@
 				//描画
 				g.endFill();
 
-				s.addEventListener('click', function(e){
-					var g = e.target.graphics;
-					// g.clear();
-					g.beginFill("#FFffff");
-					g.drawRect(0,0,mapSize,mapSize);
-					g.endFill();
-					setFriend(e.target.x,e.target.y);
-				});
+				//敵ルート上かチェック
+				for(var k=0,len = rootPoint.length; k < len; k++){
+					if(s.x === mapSize*rootPoint[k].x && s.y === mapSize*rootPoint[k].y){
+						s.addEventListener('click', function(e){
+							alert("置けないいいいいい");
+						});
+						eventFlag = true;
+					}
+				}
+				//敵ルート以外	
+				if(eventFlag === false){
+					s.addEventListener('click', function(e){
+						console.log(e.target.id);
+						var g = e.target.graphics;
+						// g.clear();
+						g.beginFill("#FFffff");
+						g.drawRect(0,0,mapSize,mapSize);
+						g.endFill();
+						setFriend(e.target.x,e.target.y);
+					});
+				}
 				stage.addChild(s);
 			}
 		}
-
 		stage.update();
 	}
 	createMap();
-
-
-	//friendImage
-	friend = new Image();
-	friend.src = "../public/img/friend.png";
-
-	function setFriend(x,y){
-		var bitmap = new Bitmap(friend);
-		bitmap.x = x;
-		bitmap.y = y;
-		stage.addChild(bitmap);
-		stage.update();
-	}
-
-
 
 	//敵移動ルート描画
 	enemyRoot();
@@ -132,7 +127,44 @@
 
 	}
 
+	//塔の体力
+	var last = new Text(10,"44px Myriad Pro","#fff");
+	stage.addChild(last);
+	stage.update();
+
+	//塔の体力減少
+	function decreaseTower(){
+		removeObj(last);
+		last = new Text(last.text -1,"44px Myriad Pro","#fff");
+		stage.addChild(last);
+		stage.update();
+		if(last.text === 0){
+			alert("game over");
+		}
+	}
 	
+
+
+	//friendImage
+	friend = new Image();
+	friend.src = "../public/img/friend.png";
+
+	//味方設置
+	function setFriend(x,y){
+		var bitmap = new Bitmap(friend);
+		bitmap.x = x;
+		bitmap.y = y;
+		stage.addChild(bitmap);
+		stage.update();
+	}
+
+
+
+	
+
+
+
+
 	//towerImage
 	tower = new Image();
 	tower.src="../public/img/tower.png";
@@ -141,13 +173,17 @@
 	//塔描画
 	function drawTower(){
 		var bitmap = new Bitmap(tower);
-		var hp = new Text("HP");
-		var last = new Text("10");
+		var hp = new Text("HP","44px Myriad Pro","#fff");
+		hp.x = 100;
+		hp.y = 100;
+		
 		bitmap.x = mapSize*6;
 		bitmap.y = mapSize*8;
-		stage.addChild(bitmap,hp,last);
+		stage.addChild(bitmap,hp);
 		stage.update();
 	}
+
+
 
 	//enemyImage
 	enemyImg = new Image();
@@ -156,7 +192,7 @@
 
 	//敵描画
 	function drawEnemy(){
-		enemy = new Bitmap(enemyImg);
+		var enemy = new Bitmap(enemyImg);
 		enemy.x = mapSize*1;
 		enemy.y = mapSize*0;
 		// enemy.cache(0, 0, 40, 40);　キャッシュ？
@@ -164,7 +200,7 @@
 		stage.update();
 		Ticker.setFPS(30);
 		Ticker.addListener(stage);
-		moveEnemy();
+		moveEnemy(enemy);
 		enemy.onClick = function(e) {
 			alert("star object is clicked.");
 		};
@@ -172,31 +208,23 @@
 	}
 
 	//敵移動アニメーション		
-	function moveEnemy(){
+	function moveEnemy(enemy){
 		enemy.id = "enemy";
 		var move = Tween.get(enemy,{loop:false});
 		for(var i =0,len = rootPoint.length; i < len; i++){
 			move.to({x:rootPoint[i].x*mapSize,y:rootPoint[i].y*mapSize},100,Ease.quartIn);
 		}
 		move
-			.call(f())
+			.call(decreaseTower)
 			.call(drawEnemy)
-			.call(removeEnemy,[enemy]);
+			.call(removeObj,[enemy]);
 	}
 
-	var f = decreaseTower();
-	//塔の体力減少
-	function decreaseTower(){
-		var last = 10;
-		return function(){
-			var last = new Text(--last);
-			stage.addChild(last);
-		};
-	}
 
-	//敵の削除
-	function removeEnemy(enemy) {
-		stage.removeChild(enemy);
+
+	//オブジェクトの削除
+	function removeObj(obj) {
+		stage.removeChild(obj);
 	}
 
 
