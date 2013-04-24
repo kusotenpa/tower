@@ -1,14 +1,18 @@
 (function(){
 	var d = document;
-	
+
+
 	//canvas設定、satageのインスタンス生成
 	var canvas = d.getElementById("canvas");
 	canvas.width = d.getElementById("wrap").offsetWidth;
 	canvas.height = d.getElementById("wrap").offsetHeight;
 	var stage = new Stage(canvas);
+	createjs.Touch.enable(stage);
 
 	//1マスのサイズ
 	var mapSize = 40;
+
+
 
 	// //読み込む画像
 	// var imgList = [
@@ -52,34 +56,64 @@
 			{x:5,y:6},
 			{x:6,y:6},
 			{x:7,y:6},
-			{x:7,y:7}
+			{x:7,y:7},
+			{x:7,y:8}
 		];
 
 
 
 	//マップの描画
 	function createMap(){
-		//マスのデザイン
-		var g = new Graphics();
-		g.setStrokeStyle(5);
-		g.beginStroke(Graphics.getHSL(180,50,50,1.0));
-		g.beginFill("#888");
 
 		//マスの描画
 		for(var i = 0, w = canvas.width/mapSize; i < w; i++){
 			for(var j = 0, h = canvas.height/mapSize; j < h; j++){
 
+				var s = new Shape();
+				var g = s.graphics;
+
+				//マスのデザイン
+				g.setStrokeStyle(5);
+				g.beginStroke(Graphics.getHSL(180,50,50,1.0));
+				g.beginFill("#888");
+				g.drawRect(0,0,mapSize,mapSize);
+
 				//座標セット
-				g.drawRect(i*mapSize,j*mapSize,mapSize,mapSize);
+				s.x = i*mapSize;
+				s.y = j*mapSize;
 
 				//描画
-				var s = new Shape(g);
+				g.endFill();
+
+				s.addEventListener('click', function(e){
+					var g = e.target.graphics;
+					// g.clear();
+					g.beginFill("#FFffff");
+					g.drawRect(0,0,mapSize,mapSize);
+					g.endFill();
+					setFriend(e.target.x,e.target.y);
+				});
 				stage.addChild(s);
 			}
 		}
+
 		stage.update();
 	}
 	createMap();
+
+
+	//friendImage
+	friend = new Image();
+	friend.src = "../public/img/friend.png";
+
+	function setFriend(x,y){
+		var bitmap = new Bitmap(friend);
+		bitmap.x = x;
+		bitmap.y = y;
+		stage.addChild(bitmap);
+		stage.update();
+	}
+
 
 
 	//敵移動ルート描画
@@ -107,9 +141,11 @@
 	//塔描画
 	function drawTower(){
 		var bitmap = new Bitmap(tower);
+		var hp = new Text("HP");
+		var last = new Text("10");
 		bitmap.x = mapSize*6;
 		bitmap.y = mapSize*8;
-		stage.addChild(bitmap);
+		stage.addChild(bitmap,hp,last);
 		stage.update();
 	}
 
@@ -135,8 +171,6 @@
 
 	}
 
-
-
 	//敵移動アニメーション		
 	function moveEnemy(){
 		enemy.id = "enemy";
@@ -144,11 +178,26 @@
 		for(var i =0,len = rootPoint.length; i < len; i++){
 			move.to({x:rootPoint[i].x*mapSize,y:rootPoint[i].y*mapSize},100,Ease.quartIn);
 		}
-		move.call(drawEnemy);
-
-
+		move
+			.call(f())
+			.call(drawEnemy)
+			.call(removeEnemy,[enemy]);
 	}
 
+	var f = decreaseTower();
+	//塔の体力減少
+	function decreaseTower(){
+		var last = 10;
+		return function(){
+			var last = new Text(--last);
+			stage.addChild(last);
+		};
+	}
+
+	//敵の削除
+	function removeEnemy(enemy) {
+		stage.removeChild(enemy);
+	}
 
 
 
