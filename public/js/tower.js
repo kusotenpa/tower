@@ -1,5 +1,33 @@
 (function(){
 	var d = document;
+//attackerImage
+	var up = new Image();
+	up.src = "../public/img/up.png";
+
+	var right = new Image();
+	right.src = "../public/img/right.png";
+
+	var down = new Image();
+	down.src = "../public/img/down.png";
+
+	var left = new Image();
+	left.src = "../public/img/left.png";
+
+	var all = new Image();
+	all.src = "../public/img/all.png";
+	//attackerの種類
+	var type = "up";
+	var attacker = up;
+
+	d.body.addEventListener("touchstart",function(e){
+		var id = e.target.id;
+		e.stopPropagation();
+		if(id !== "canvas"){
+			type = id;
+			attacker = id;
+		}
+	},false);
+
 
 	//canvas設定、satageのインスタンス生成
 	var canvas = d.getElementById("canvas");
@@ -11,18 +39,21 @@
 	//1マスのサイズ
 	var mapSize = 40;
 
+
 	
 
 
-	// //読み込む画像
-	// var imgList = [
-	// 	{src: "../public/img/tower.png"},
-	// 	{src: "../public/img/tower.png"}
-	// ];
 
+	//味方設置座標
+	var attackerPoint = [];
 
+	//敵現在地座標
+	var nowPoint = [];
 
-	//敵移動ルート
+	//敵カウンター
+	var enemyCounter = 0;
+
+	//敵移動座標
 	var rootPoint = [
 			{x:1,y:0},
 			{x:1,y:1},
@@ -101,7 +132,7 @@
 						g.beginFill("#FFffff");
 						g.drawRect(0,0,mapSize,mapSize);
 						g.endFill();
-						setFriend(e.target.x,e.target.y);
+						setAttacker(e.target.x,e.target.y);
 					});
 				}
 				stage.addChild(s);
@@ -139,29 +170,83 @@
 		stage.addChild(last);
 		stage.update();
 		if(last.text === 0){
-			alert("game over");
+			// alert("game over");
 		}
 	}
-	
-
-
-	//friendImage
-	friend = new Image();
-	friend.src = "../public/img/friend.png";
 
 	//味方設置
-	function setFriend(x,y){
-		var bitmap = new Bitmap(friend);
+	function setAttacker(x,y){
+		// console.log(attacker.src);
+		var bitmap = new Bitmap(attacker);
 		bitmap.x = x;
 		bitmap.y = y;
+
+		//設置座標の登録
+		attackerPoint.push({x:x,y:y});
+
 		stage.addChild(bitmap);
-		stage.update();
+
+		attackCourse(bitmap,x,y);
 	}
 
+	//攻撃範囲判定
+	function attackCourse(obj,x,y){
+		var course = null;
+		for(var i = 0, len = nowPoint.length; i < len; i++ ){
+			//上
+			if(x === nowPoint[i].x && y === nowPoint[i].y + mapSize){
+				console.log("上キタ");
+				course = "up";
+			}
+			//右
+			if(x === nowPoint[i].x - mapSize && y  === nowPoint[i].y){
+				console.log("右キタ");
+				course = "right";
+			}
+			//下
+			if(x === nowPoint[i].x && y === nowPoint[i].y - mapSize){
+				console.log("下キタ");
+				course = "down";
+			}
+			//左
+			if(x === nowPoint[i].x + mapSize && y === nowPoint[i].y){
+				console.log("左キタ");
+				course = "left";
+			}
+			attackMotion(x,y,course);
+		}
+		setTimeout(arguments.callee,1000,obj,x,y);
+	}
 
+	//攻撃アニメーション
+	function attackMotion(x,y,course){
+		var center = mapSize / 2;
+		var s = new Shape();
+		var g = s.graphics;
+		g.beginFill("#6045b8");
+		g.drawEllipse(x,y,5,10);
+		stage.addChild(s);
+		var attack = Tween.get(s,{loop:false});
+		switch(course){
+			case "up":
+				attack.to({x: center , y: -center},100);
+				break;
 
-	
+			case "right":
+				attack.to({x: mapSize + center , y: center},100);
+				break;
 
+			case "down":
+				attack.to({x: center , y: mapSize + center},100);
+				break;
+
+			case "left":
+				attack.to({x: -center , y: center},100);
+				break;
+		}
+		attack.call(removeObj,[s]);
+
+	}
 
 
 
@@ -176,7 +261,7 @@
 		var hp = new Text("HP","44px Myriad Pro","#fff");
 		hp.x = 100;
 		hp.y = 100;
-		
+
 		bitmap.x = mapSize*6;
 		bitmap.y = mapSize*8;
 		stage.addChild(bitmap,hp);
@@ -198,8 +283,6 @@
 		// enemy.cache(0, 0, 40, 40);　キャッシュ？
 		stage.addChild(enemy);
 		stage.update();
-		Ticker.setFPS(30);
-		Ticker.addListener(stage);
 		moveEnemy(enemy);
 		enemy.onClick = function(e) {
 			alert("star object is clicked.");
@@ -209,15 +292,27 @@
 
 	//敵移動アニメーション		
 	function moveEnemy(enemy){
-		enemy.id = "enemy";
 		var move = Tween.get(enemy,{loop:false});
 		for(var i =0,len = rootPoint.length; i < len; i++){
-			move.to({x:rootPoint[i].x*mapSize,y:rootPoint[i].y*mapSize},100,Ease.quartIn);
+			move
+				.to({x:rootPoint[i].x*mapSize,y:rootPoint[i].y*mapSize},1000)
+				.call(setPoint,[rootPoint[i]]);
 		}
 		move
 			.call(decreaseTower)
 			.call(drawEnemy)
-			.call(removeObj,[enemy]);
+			.call(removeObj,[enemy])
+			.call(increaseEnemy);
+	}
+
+	//敵現在地取得
+	function setPoint(point){
+		nowPoint[enemyCounter] = {x: point.x * mapSize, y: point.y * mapSize};
+
+	}
+
+	function increaseEnemy(){
+		enemyCounter++;
 	}
 
 
@@ -227,79 +322,7 @@
 		stage.removeChild(obj);
 	}
 
-
-
-
-
-	// var _rect = new Shape();
-	// var g = _rect.graphics;
-	// g.beginFill("#0066cc");
-	// g.drawRect(-25, -25, 50, 50);
-	// g.endFill();
-	// _rect.x = 100;
-	// _rect.y = 100;
-	// stage.addChild(_rect);
-	// stage.update();
-	// Ticker.setFPS(30);
-	// Ticker.addListener(stage);
-	// tween();
-
-	
-
-	
-
-
-// function tween() {
-// 	_rect.id = "rect";
-// 	var tween = Tween.get(_rect, {loop:true});
-// 	console.log(tween._target.id); // 出力：rect
-// 	tween.to({rotation:360}, 2000, Ease.linear);
-// 	}
-
-
-
-
-
-
-	// var canvas = document.getElementById("canvas");
-	// canvas.width  = window.innerWidth;
-	// canvas.height = window.innerHeight;
-	// var ctx = canvas.getContext('2d');
-	// ctx.fillStyle = 'rgb(155, 187, 89)';
-	// ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
-	// var size = 50;
-	// for(var i = 0, x = canvas.width; i < x/size; i++){
-	// 	for(var j = 0, y = canvas.height; j < y/size; j++){
-	// 		ctx.fillStyle = "rgb("+parseInt(Math.random()*255)+","+parseInt(Math.random()*255)+","+parseInt(Math.random()*255)+")";
-	// 		ctx.fillRect(i*size,j*size,size,size);
-	// 	}
-	// }
-
-	// //options
- //    var point = {x:0,y:0};//座標
- //    var timer;
- //    var delay = 50;
- //    var par = {x:4,y:6};
-
- //    //draw()
- //    function draw(x,y){
- //        ctx.clearRect(0,0,window.innerWidth,window.innerHeight);
- //        ctx.fillRect(x,y,50,50);
- //    }
-
-	// var move = function(){
-	// 	if(point.y <= 100){
-	// 		point.y += par.y;
-	// 	}
-	// 	if(point.y > 100){
-	// 		point.x += par.x;
-	// 	}
-
-	// 	draw(point.x,point.y);
-	// 	clearTimeout(timer);
-	// 	timer = setTimeout(move,delay);
-	// };
-
- //    move();
+	Ticker.setFPS(30);
+	Ticker.addListener(stage);
 
 })();
