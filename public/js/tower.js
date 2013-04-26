@@ -81,35 +81,119 @@
 	var attacker = up;
 
 	//上攻撃
-	var UpAttacker = function(){
-		this.up = "up";
-	};
-	UpAttacker.prototype = {
-		upAttack: function(obj,x,y){
-			for(var i = 0, len = nowPoint.length; i < len; i++ ){
-				if(x === nowPoint[i].x && y === nowPoint[i].y + mapSize){
-					console.log("上キタ");
-					nowPoint[i].enemy.life--;
+	function upAttack(attacker,x,y){
+		for(var i = 0, len = nowPoint.length; i < len; i++ ){
+			console.log(i);
+
+			if( x <= nowPoint[i].enemy.x && nowPoint[i].enemy.x <= x + mapSize &&  y - mapSize <= nowPoint[i].enemy.y && nowPoint[i].enemy.y <= y ) {
+				console.log("hit");
+				nowPoint[i].enemy.life--;
+
+				//hpが0の時
+				if(nowPoint[i].enemy.life < 1){
 					console.log(nowPoint[i].enemy.life);
-					if(nowPoint[i].enemy.life < 1){
-						Tween.removeTweens(nowPoint[i].enemy);
+					//敵アニメーション削除	
+					Tween.removeTweens(nowPoint[i].enemy);
 
-						//座標リセット
-						nowPoint[i].x = 0;
-						nowPoint[i].y = 0;
+					//敵描画削除
+					removeObj(nowPoint[i].enemy);
 
+					nowPoint[i].enemy.life = null;
 
-						removeObj(nowPoint[i].enemy);
-						drawEnemy();
-						increaseEnemyCount();
-						resource.text += 10;
-					}
-					attackMotion(x,y,this.up);
+					//要素削除
+					// delete nowPoint[i];
+					// nowPoint[i].splice(i,1);
+					drawEnemy();
+					increaseEnemyCount();
+					resource.text += 10;
 				}
 			}
-			setTimeout(arguments.callee.bind(this),1000,obj,x,y);
 		}
-	};
+	}
+
+	function rightAttack(attacker,x,y){
+		for(var i = 0, len = nowPoint.length; i < len; i++ ){
+			if( x + mapSize <= nowPoint[i].enemy.x && nowPoint[i].enemy.x <= x + mapSize * 2 &&  y <= nowPoint[i].enemy.y && nowPoint[i].enemy.y <= y + mapSize ) {
+				console.log("hit");
+
+				nowPoint[i].enemy.life--;
+
+				//hpが0の時
+				if(nowPoint[i].enemy.life < 1){
+					//敵アニメーション削除	
+					Tween.removeTweens(nowPoint[i].enemy);
+
+					//敵描画削除
+					removeObj(nowPoint[i].enemy);
+
+					//座標リセット
+					nowPoint[i].x = 0;
+					nowPoint[i].y = 0;
+
+					drawEnemy();
+					increaseEnemyCount();
+					resource.text += 10;
+				}
+			}
+		}
+	}
+
+	function downAttack(){
+		for(var i = 0, len = nowPoint.length; i < len; i++ ){
+			if(x === nowPoint[i].x && y + mapSize === nowPoint[i].y){
+				console.log("hit");
+				nowPoint[i].enemy.life--;
+
+				//hpが0の時
+				if(nowPoint[i].enemy.life < 1){
+					//敵アニメーション削除	
+					Tween.removeTweens(nowPoint[i].enemy);
+
+					//敵描画削除
+					removeObj(nowPoint[i].enemy);
+
+					//座標リセット
+					nowPoint[i].x = 0;
+					nowPoint[i].y = 0;
+
+					drawEnemy();
+					increaseEnemyCount();
+					resource.text += 10;
+				}
+			}
+		}
+	}
+
+	function rightAttack(){
+		for(var i = 0, len = nowPoint.length; i < len; i++ ){
+			if(x === nowPoint[i].x && y - mapSize === nowPoint[i].y){
+				console.log("hit");
+				nowPoint[i].enemy.life--;
+
+				//hpが0の時
+				if(nowPoint[i].enemy.life < 1){
+					//敵アニメーション削除	
+					Tween.removeTweens(nowPoint[i].enemy);
+
+					//敵描画削除
+					removeObj(nowPoint[i].enemy);
+
+					//座標リセット
+					nowPoint[i].x = 0;
+					nowPoint[i].y = 0;
+
+					drawEnemy();
+					increaseEnemyCount();
+					resource.text += 10;
+				}
+			}
+		}
+	}
+
+
+
+
+
 
 	//右攻撃
 	var RightAttacker = function(){
@@ -267,6 +351,7 @@
 	//アタッカー設置
 	function setAttacker(x,y){
 
+		//設置座標チェック	
 		for(var i = 0, len = attackerPoint.length; i < len; i++){
 			if(x === attackerPoint[i].x && y === attackerPoint[i].y){
 				alertElement.innerHTML = "既にアタッカーがいます";
@@ -275,6 +360,7 @@
 			}
 		}
 
+		//リソースチェック
 		if(resource.text < 20){
 			alertElement.innerHTML = "リソースが足りません";
 			alertElement.style.display = "block";
@@ -284,6 +370,7 @@
 			resource.text -= 20;
 		}
 
+		//アタッカーインスタンス化
 		var bitmap = new Bitmap(attacker);
 		bitmap.scaleX = 0.5;
 		bitmap.scaleY = 0.5;
@@ -295,29 +382,44 @@
 
 		stage.addChild(bitmap);
 
+		animateAttacker(bitmap,x,y);
+	}
 
-
-		//アタッカー生成
+	//アタッカーアニメーション
+	function animateAttacker(bitmap,x,y){
+		var attack;
 		switch(attacker){
 			case up:
-			var upAttacker = new UpAttacker();
-			upAttacker.upAttack(bitmap,x,y);
-			break;
+				attack = Tween.get(bitmap,{loop:true});
+				attack
+					.to({x: x , y: y - mapSize},100)
+					.to({x: x , y: y },1400)
+					.call(upAttack,[bitmap,x,y]);
+				break;
 
 			case right:
-			var rightAttacker = new RightAttacker();
-			rightAttacker.rightAttack(bitmap,x,y);
-			break;
+				attack = Tween.get(bitmap,{loop:true});
+				attack
+					.to({x: x + mapSize , y: y},200)
+					.to({x: x , y: y },1300)
+					.call(fuga,[bitmap,x,y]);
+				break;
 
 			case down:
-			var downAttacker = new DownAttacker();
-			downAttacker.downAttack(bitmap,x,y);
-			break;
+				attack = Tween.get(bitmap,{loop:true});
+				attack
+					.to({x: x , y: y + mapSize},200)
+					.to({x: x , y: y },1300)
+					.call(fuga,[bitmap,x,y]);
+				break;
 
 			case left:
-			var leftAttacker = new LeftAttacker();
-			leftAttacker.leftAttack(bitmap,x,y);
-			break;
+				attack = Tween.get(bitmap,{loop:true});
+				attack
+					.to({x: x - mapSize , y: y},200)
+					.to({x: x , y: y },1300)
+					.call(fuga,[bitmap,x,y]);
+				break;
 		}
 	}
 
@@ -422,7 +524,7 @@
 	//敵現在地,敵obj取得
 	function setPoint(point,obj){
 		nowPoint[enemyCounter] = {x: point.x * mapSize, y: point.y * mapSize, enemy: obj};
-		console.log(nowPoint[enemyCounter]);
+		// console.log(nowPoint[enemyCounter]);
 	}
 
 	function increaseEnemyCount(){
