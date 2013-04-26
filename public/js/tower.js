@@ -1,5 +1,14 @@
-(function(){
-	var d = document;
+var d = document;
+
+var topBtn = d.getElementById("topBtn");
+	topBtn.addEventListener("touchend",function(e){
+		e.preventDefault();
+		topBtn.parentNode.style.display = "none";
+		gameStart();
+	},false);
+
+function gameStart(){
+
 
 	//canvas設定、satageのインスタンス生成
 	var canvas = d.getElementById("canvas");
@@ -7,6 +16,7 @@
 	canvas.height = d.getElementById("wrap").offsetHeight;
 	var stage = new Stage(canvas);
 	createjs.Touch.enable(stage);
+
 
 	//1マスのサイズ
 	var mapSize = 40;
@@ -58,7 +68,21 @@
 		];
 
 	//アラートウインドウ
-	var alertElement = d.getElementById("alert");
+	var alertElement = d.getElementById("textAlert");
+	alertButton = d.getElementById("buttonAlert");
+	alertButton.addEventListener("touchend",function(e){
+		e.preventDefault();
+		alertButton.parentNode.parentNode.style.display = "none";
+	},false);
+
+	//naviの色切り替え
+	var naviElement = d.getElementById("attacker");
+	naviElement.addEventListener("touchend",function(e){
+		for(var i = 0,len = naviElement.children.length; i < len; i++){
+			naviElement.children[i].style.backgroundColor="#0150ef";
+		}
+		e.target.parentNode.style.backgroundColor = "#f05690";
+	},false);
 
 
 	//attackerImage
@@ -74,37 +98,27 @@
 	var left = new Image();
 	left.src = "../public/img/left.png";
 
-	var all = new Image();
-	all.src = "../public/img/all.png";
-
 	//attackerの画像挿入
 	var attacker = up;
 
 	//上攻撃
 	function upAttack(attacker,x,y){
 		for(var i = 0, len = nowPoint.length; i < len; i++ ){
-			console.log(i);
-
 			if( x <= nowPoint[i].enemy.x && nowPoint[i].enemy.x <= x + mapSize &&  y - mapSize <= nowPoint[i].enemy.y && nowPoint[i].enemy.y <= y ) {
-				console.log("hit");
 				nowPoint[i].enemy.life--;
 
 				//hpが0の時
 				if(nowPoint[i].enemy.life < 1){
-					console.log(nowPoint[i].enemy.life);
 					//敵アニメーション削除	
 					Tween.removeTweens(nowPoint[i].enemy);
 
 					//敵描画削除
 					removeObj(nowPoint[i].enemy);
 
-					nowPoint[i].enemy.life = null;
+					//座標リセット
+					nowPoint[i].enemy.x = 0;
+					nowPoint[i].enemy.y = 0;
 
-					//要素削除
-					// delete nowPoint[i];
-					// nowPoint[i].splice(i,1);
-					drawEnemy();
-					increaseEnemyCount();
 					resource.text += 10;
 				}
 			}
@@ -114,7 +128,6 @@
 	function rightAttack(attacker,x,y){
 		for(var i = 0, len = nowPoint.length; i < len; i++ ){
 			if( x + mapSize <= nowPoint[i].enemy.x && nowPoint[i].enemy.x <= x + mapSize * 2 &&  y <= nowPoint[i].enemy.y && nowPoint[i].enemy.y <= y + mapSize ) {
-				console.log("hit");
 
 				nowPoint[i].enemy.life--;
 
@@ -127,21 +140,19 @@
 					removeObj(nowPoint[i].enemy);
 
 					//座標リセット
-					nowPoint[i].x = 0;
-					nowPoint[i].y = 0;
+					nowPoint[i].enemy.x = 0;
+					nowPoint[i].enemy.y = 0;
 
-					drawEnemy();
-					increaseEnemyCount();
 					resource.text += 10;
 				}
 			}
 		}
 	}
 
-	function downAttack(){
+	function downAttack(attacker,x,y){
 		for(var i = 0, len = nowPoint.length; i < len; i++ ){
-			if(x === nowPoint[i].x && y + mapSize === nowPoint[i].y){
-				console.log("hit");
+			if( x  <= nowPoint[i].enemy.x && nowPoint[i].enemy.x <= x + mapSize * 2 && y + mapSize <= nowPoint[i].enemy.y && nowPoint[i].enemy.y <= y + mapSize * 2 ) {
+
 				nowPoint[i].enemy.life--;
 
 				//hpが0の時
@@ -153,21 +164,19 @@
 					removeObj(nowPoint[i].enemy);
 
 					//座標リセット
-					nowPoint[i].x = 0;
-					nowPoint[i].y = 0;
+					nowPoint[i].enemy.x = 0;
+					nowPoint[i].enemy.y = 0;
 
-					drawEnemy();
-					increaseEnemyCount();
 					resource.text += 10;
 				}
 			}
 		}
 	}
 
-	function rightAttack(){
+	function leftAttack(attacker,x,y){
 		for(var i = 0, len = nowPoint.length; i < len; i++ ){
-			if(x === nowPoint[i].x && y - mapSize === nowPoint[i].y){
-				console.log("hit");
+			if( x - mapSize <= nowPoint[i].enemy.x && nowPoint[i].enemy.x <= x  &&  y <= nowPoint[i].enemy.y && nowPoint[i].enemy.y <= y + mapSize ) {
+
 				nowPoint[i].enemy.life--;
 
 				//hpが0の時
@@ -179,81 +188,18 @@
 					removeObj(nowPoint[i].enemy);
 
 					//座標リセット
-					nowPoint[i].x = 0;
-					nowPoint[i].y = 0;
+					nowPoint[i].enemy.x = 0;
+					nowPoint[i].enemy.y = 0;
 
-					drawEnemy();
-					increaseEnemyCount();
 					resource.text += 10;
 				}
 			}
 		}
 	}
-
-
-
-
-
-
-	//右攻撃
-	var RightAttacker = function(){
-		this.right = "right";
-	};
-	RightAttacker.prototype = {
-		rightAttack: function(obj,x,y){
-			for(var i = 0, len = nowPoint.length; i < len; i++ ){
-				if(x === nowPoint[i].x - mapSize && y  === nowPoint[i].y){
-					console.log("右キタ");
-					attackMotion(x,y,this.right);				}
-			}
-			setTimeout(arguments.callee.bind(this),1000,obj,x,y);
-		}
-	};
-
-	//下攻撃
-	var DownAttacker = function(){
-		this.down = "down";
-	};
-	DownAttacker.prototype = {
-		downAttack: function(obj,x,y){
-			for(var i = 0, len = nowPoint.length; i < len; i++ ){
-				if(x === nowPoint[i].x && y === nowPoint[i].y - mapSize){
-					console.log("下キタ");
-					attackMotion(x,y,this.down);
-				}
-			}
-			setTimeout(arguments.callee.bind(this),1000,obj,x,y);
-		}
-	};
-
-	//左攻撃
-	var LeftAttacker = function(){
-		this.left = "left";
-	};
-	LeftAttacker.prototype = {
-		leftAttack: function(obj,x,y){
-			for(var i = 0, len = nowPoint.length; i < len; i++ ){
-				if(x === nowPoint[i].x + mapSize && y === nowPoint[i].y){
-					console.log("左キタ");
-					attackMotion(x,y,this.left);				}
-			}
-			setTimeout(arguments.callee.bind(this),1000,obj,x,y);
-		}
-	};
-
-	// //全方向
-	// var AllAttacker = function(){};
-	// AllAttacker.prototype = {
-	// 	upAttack: function(){
-	// 		UpAttacker.prototype.upAttack.apply(this);
-	// 	}
-	// };
-
-
 
 	//選択したアタッカーの画像をセット
 	d.body.addEventListener("touchstart",function(e){
-		var id = e.target.id;
+		var id = e.target.parentNode.id;
 		e.stopPropagation();
 		switch(id){
 			case "up":
@@ -269,7 +215,7 @@
 			attacker = left;
 			break;
 			case "all":
-			attacker = all;
+			location.reload(false);
 			break;
 		}
 	},false);
@@ -286,9 +232,9 @@
 				var g = s.graphics;
 
 				//マスのデザイン
-				g.setStrokeStyle(5);
-				g.beginStroke(Graphics.getHSL(180,50,50,1.0));
-				g.beginFill("#888");
+				g.setStrokeStyle(3);
+				g.beginStroke("#78a000");
+				g.beginFill("#96C800");
 				g.drawRect(0,0,mapSize,mapSize);
 
 				//座標セット
@@ -303,7 +249,7 @@
 					if(s.x === mapSize*rootPoint[k].x && s.y === mapSize*rootPoint[k].y){
 						s.addEventListener('click', function(e){
 							alertElement.innerHTML = "敵のルートです";
-							alertElement.style.display = "block";
+							alertElement.parentNode.parentNode.style.display = "block";
 						});
 						eventFlag = true;
 					}
@@ -317,36 +263,81 @@
 			}
 		}
 		stage.update();
+
 	}
 	createMap();
 
 	//敵移動ルート描画
-	enemyRoot();
-	function enemyRoot(){
-		//マスのデザイン
-		var g = new Graphics();
-		g.beginFill("#ff0000");
+	var rootImg = new Image();
+	rootImg.src = "../public/img/root.png";
+	rootImg.addEventListener("load",enemyRoot);
 
+	function enemyRoot(){
 		//ルート描画
 		for(var i=0,len = rootPoint.length; i < len; i++){
-			g.drawRect(mapSize*rootPoint[i].x,mapSize*rootPoint[i].y,mapSize,mapSize);
-			var s = new Shape(g);
-			stage.addChild(s);
+			//マス画像
+			var bitmap = new Bitmap(rootImg);
+			bitmap.scaleX = 0.5;
+			bitmap.scaleY = 0.5;
+			bitmap.x = mapSize*rootPoint[i].x;
+			bitmap.y = mapSize*rootPoint[i].y;
+			stage.addChild(bitmap);
 		}
+		drawTower();
 	}
 
 
+	//towerImage
+	var tower = new Image();
+	tower.src="../public/img/tower.png";
+
+	//塔描画
+	function drawTower(){
+		var bitmap = new Bitmap(tower);
+		var hp = new Text("HP","16px Myriad Pro","#fff");
+		hp.x = 6 * mapSize;
+		hp.y = 3;
+
+		bitmap.scaleX = 0.5;
+		bitmap.scaleY = 0.5;
+		bitmap.x = mapSize*6;
+		bitmap.y = mapSize*8;
+		stage.addChild(bitmap,hp);
+	}
+
+	//塔の体力
+	var last = new Text(10,"20px Myriad Pro","#fff");
+	last.x = 7 * mapSize;
+	last.y = 0;
+	stage.addChild(last);
+
+	//塔の体力減少
+	function decreaseTower(){
+		last.text--;
+		if(last.text < 1){
+			alert("game over");
+			location.reload(false);
+		}
+	}
+
 	//アタッカー設置リソース表示
-	var resource = new Text(60,"44px Myriad Pro","#fff000");
-	resource.x = 20;
-	resource.y = 40;
-	stage.addChild(resource);
+	var resource = new Text(60,"20px Myriad Pro","#fff000");
+	resource.x = 7 * mapSize;
+	resource.y = 20;
+
+	//アタッカー設置リソース表示
+	var resourceText = new Text("リソース","14px Myriad Pro","#fff000");
+	resourceText.x = 5.1 * mapSize;
+	resourceText.y = 25;
+	stage.addChild(resource,resourceText);
 
 	//リソース増加
 	(function(){
 		resource.text++;
 		setTimeout(arguments.callee,500);
 	})();
+
+
 
 	//アタッカー設置
 	function setAttacker(x,y){
@@ -355,7 +346,7 @@
 		for(var i = 0, len = attackerPoint.length; i < len; i++){
 			if(x === attackerPoint[i].x && y === attackerPoint[i].y){
 				alertElement.innerHTML = "既にアタッカーがいます";
-				alertElement.style.display = "block";
+				alertElement.parentNode.parentNode.style.display = "block";
 				return;
 			}
 		}
@@ -363,7 +354,7 @@
 		//リソースチェック
 		if(resource.text < 20){
 			alertElement.innerHTML = "リソースが足りません";
-			alertElement.style.display = "block";
+			alertElement.parentNode.parentNode.style.display = "block";
 			return;
 		}
 		else{
@@ -402,7 +393,7 @@
 				attack
 					.to({x: x + mapSize , y: y},200)
 					.to({x: x , y: y },1300)
-					.call(fuga,[bitmap,x,y]);
+					.call(rightAttack,[bitmap,x,y]);
 				break;
 
 			case down:
@@ -410,7 +401,7 @@
 				attack
 					.to({x: x , y: y + mapSize},200)
 					.to({x: x , y: y },1300)
-					.call(fuga,[bitmap,x,y]);
+					.call(downAttack,[bitmap,x,y]);
 				break;
 
 			case left:
@@ -418,7 +409,7 @@
 				attack
 					.to({x: x - mapSize , y: y},200)
 					.to({x: x , y: y },1300)
-					.call(fuga,[bitmap,x,y]);
+					.call(leftAttack,[bitmap,x,y]);
 				break;
 		}
 	}
@@ -453,82 +444,51 @@
 		attack.call(removeObj,[s]);
 	}
 
-
-
-	//towerImage
-	tower = new Image();
-	tower.src="../public/img/tower.png";
-	tower.addEventListener("load",drawTower);
-
-	//塔描画
-	function drawTower(){
-		var bitmap = new Bitmap(tower);
-		var hp = new Text("HP","44px Myriad Pro","#fff");
-		hp.x = 100;
-		hp.y = 100;
-
-		bitmap.x = mapSize*6;
-		bitmap.y = mapSize*8;
-		stage.addChild(bitmap,hp);
-	}
-
-	//塔の体力
-	var last = new Text(10,"44px Myriad Pro","#fff");
-	stage.addChild(last);
-
-	//塔の体力減少
-	function decreaseTower(){
-		last.text--;
-		if(last.text < 1){
-			// alert("game over");
-		}
-	}
-
-
+	
 
 	//enemyImage
 	enemyImg = new Image();
 	enemyImg.src = "../public/img/dokuro.png";
 	enemyImg.addEventListener("load",drawEnemy);
-	
+
 	//敵描画
 	function drawEnemy(){
+		var time = 10000;
 		var enemy = new Bitmap(enemyImg);
 		enemy.x = mapSize*1;
 		enemy.y = mapSize*0;
 		enemy.life = 3;
-		// enemy.cache(0, 0, 40, 40);　キャッシュ？
+		enemy.id = enemyCounter;
 		stage.addChild(enemy);
 		stage.update();
 		moveEnemy(enemy);
-		enemy.onClick = function(e) {
-			alert("star object is clicked.");
-		};
+		enemyCounter++;
+		setTimeout(arguments.callee,time);
 	}
 
 	//敵移動アニメーション		
 	function moveEnemy(enemy){
+		var intervalTime = 1000;
+		if(enemyCounter > 5){
+			intervalTime = 300;
+		}
+		else if(enemyCounter > 2){
+			intervalTime = 800;
+		}
 		var move = Tween.get(enemy,{loop:false});
 		for(var i =0,len = rootPoint.length; i < len; i++){
 			move
-				.to({x:rootPoint[i].x*mapSize,y:rootPoint[i].y*mapSize},1000)
-				.call(setPoint,[rootPoint[i],enemy]);
+				.to({x:rootPoint[i].x*mapSize,y:rootPoint[i].y*mapSize},intervalTime)
+				.call(setPoint,[rootPoint[i],enemy]); //enemyobj保存
 		}
 		move
 			.call(decreaseTower)
-			.call(drawEnemy)
-			.call(removeObj,[enemy])
-			.call(increaseEnemyCount);
+			.call(removeObj,[enemy]);
 	}
 
 	//敵現在地,敵obj取得
 	function setPoint(point,obj){
-		nowPoint[enemyCounter] = {x: point.x * mapSize, y: point.y * mapSize, enemy: obj};
-		// console.log(nowPoint[enemyCounter]);
-	}
-
-	function increaseEnemyCount(){
-		enemyCounter++;
+		nowPoint[obj.id] = {x: point.x * mapSize, y: point.y * mapSize, enemy: obj};
 	}
 
 	//オブジェクトの削除
@@ -539,4 +499,4 @@
 	Ticker.setFPS(30);
 	Ticker.addListener(stage);
 
-})();
+}
